@@ -1,0 +1,61 @@
+body {
+  background-color: #1e1e1e;
+  display: grid;
+  place-items: center;
+}
+#root {
+  position: relative;
+}
+#board {
+  width: 540px;
+  height: 540px;
+}
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.cell {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  transition: all 0.5s;
+  background-color: #2d2d2d;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  place-content: center;
+}
+.door {
+  border: 1px solid #252526;
+}
+
+.arrow {
+  background: url(arrow.svg);
+  filter: invert(1) hue-rotate(120deg) saturate(1.5) brightness(1.5);
+  cursor: pointer;
+}
+
+.player {
+  width: 20px;
+  height: 20px;
+  margin: 5px;
+  border-radius: 50%;
+}
+
+.player.active {
+  animation: pulse 1s ease infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(200, 200, 200, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(200, 200, 200, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(200, 200, 200, 0);
+  }
+}

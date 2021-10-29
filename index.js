@@ -132,6 +132,25 @@ function randomBetween(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function createElement(type, x, y, rotation, players = []) {
+  const ref = document.createElement("div");
+  return {
+    ref,
+    type,
+    rotation,
+    players,
+    getX: () => x,
+    getY: () => y,
+    setX: (newX) => {
+      x = newX;
+      element.style.left = `${x * WIDTH}px`;
+    },
+    setY: (newY) => {
+      y = newY;
+      element.style.top = `${y * HEIGHT}px`;
+    },
+  };
+}
 function initializeBoard() {
   const creatBoard = () => {
     const board = [];

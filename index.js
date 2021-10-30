@@ -14,6 +14,7 @@ const TURN = 1;
 const TRIPLET = 2;
 const NONE = 3;
 const PLAYER = 4;
+const TREASURE = 5;
 const PLAYER_COLORS = ["#cc0000", "#007acc", "#2ecb2d", "#ffe600"];
 let state = {
   page: "main",
@@ -121,6 +122,8 @@ function renderGame() {
 function renderRightPanel() {
   const rightPanel = document.getElementById("right-panel");
   rightPanel.innerHTML = "";
+  const rows = document.createElement("div");
+  rows.classList.add("rows");
   for (let i = 0; i < state.playerCount; i++) {
     const row = document.createElement("div");
     if (i === state.currentPlayer) row.classList.add("active");
@@ -169,8 +172,9 @@ function renderRightPanel() {
       treasureCountainer.appendChild(treasure);
     }
     row.appendChild(treasureCountainer);
-    rightPanel.appendChild(row);
+    rows.appendChild(row);
   }
+  rightPanel.appendChild(rows);
 }
 function updateRightPanel() {
   const rightPanel = document.getElementById("right-panel");
@@ -178,10 +182,22 @@ function updateRightPanel() {
   activeRow.classList.remove("active");
   const rows = rightPanel.querySelectorAll(".row");
   const row = rows[state.currentPlayer];
-  console.log("row: ", row);
   row.classList.add("active");
-  const found = row.querySelector(".found");
+  const found = row.querySelector(".found-container span");
   found.innerText = `Found: ${state.found[state.currentPlayer]}`;
+  const treasureCountainer = row.querySelector(".treasure-countainer");
+  treasureCountainer.innerHTML = "";
+  for (
+    let j = 0;
+    j < state.treasureCount - state.found[state.currentPlayer];
+    j++
+  ) {
+    const treasure = document.createElement("img");
+    treasure.classList.add("treasure");
+    treasure.src = "closed_chest.png";
+    treasure.style.zIndex = 4 + j;
+    treasureCountainer.appendChild(treasure);
+  }
 }
 
 function renderControls() {
@@ -227,7 +243,7 @@ function randomBetween(min, max) {
 class Element {
   constructor(x, y, type, rotation) {
     this.type = type;
-    this.ref = document.createElement("div");
+    this.ref = document.createElement(type === TREASURE ? "img" : "div");
     if ([TURN, TRIPLET, STRAIGHT].includes(type)) {
       this.ref.classList.add("door");
       this.ref.classList.add("cell");
@@ -260,6 +276,11 @@ class Element {
     }
     if (type !== PLAYER) {
       this.offset = { x: 0, y: 0 };
+    }
+    if (type === TREASURE) {
+      this.ref.classList.add("big-treasure");
+      this.ref.src = "closed_chest.png";
+      this.offset = { x: 15, y: 15 };
     }
     this.setX(x);
     this.setY(y);
@@ -297,7 +318,11 @@ function createElement(type, x, y, rotation, players = []) {
 
 function getElement(x, y) {
   return state.board.find(
-    (cell) => cell.getX() === x && cell.getY() === y && cell.type !== PLAYER
+    (cell) =>
+      cell.getX() === x &&
+      cell.getY() === y &&
+      cell.type !== PLAYER &&
+      cell.type !== TREASURE
   );
 }
 
@@ -347,9 +372,36 @@ const fillBoard = () => {
   state.board.push(extra);
 };
 
+const placeTreasure = () => {
+  for (let i = 0; i < state.playerCount; i++) {
+    for (let j = 0; j < state.treasureCount; j++) {
+      let exists = true;
+      let x, y;
+      while (exists) {
+        x = randomBetween(1, 7);
+        y = randomBetween(1, 7);
+        exists = state.board.find(
+          (cell) =>
+            cell.getX() === x && cell.getY() === y && cell.type === TREASURE
+        );
+      }
+      const treasure = createElement(TREASURE, x, y, UP);
+      if (i === 0) {
+        treasure.ref.classList.add("show");
+      }
+      treasure.ref.addEventListener("click", () => {
+        step(getElement(treasure.getX(), treasure.getY()));
+      });
+      treasure.number = i;
+      state.board.push(treasure);
+    }
+  }
+};
+
 function initializeBoard() {
   state.board = createStarterBoard();
   fillBoard();
+  placeTreasure();
 }
 
 function renderBoard() {
@@ -394,10 +446,13 @@ function shift(x, y) {
       .filter((cell) => cell.getY() === y)
       .forEach((cell) => cell.setX(cell.getX() + 1));
     getElement(8, y).isExtra = true;
-    const players = state.board.filter(
-      (cell) => cell.getX() === 8 && cell.getY() === y && cell.type === PLAYER
+    const teleporters = state.board.filter(
+      (cell) =>
+        cell.getX() === 8 &&
+        cell.getY() === y &&
+        (cell.type === PLAYER || cell.type === TREASURE)
     );
-    players.forEach((player) => {
+    teleporters.forEach((player) => {
       player.setX(1);
       player.setY(y);
     });
@@ -409,10 +464,13 @@ function shift(x, y) {
       .filter((cell) => cell.getY() === y)
       .forEach((cell) => cell.setX(cell.getX() - 1));
     getElement(0, y).isExtra = true;
-    const players = state.board.filter(
-      (cell) => cell.getX() === 0 && cell.getY() === y && cell.type === PLAYER
+    const teleporters = state.board.filter(
+      (cell) =>
+        cell.getX() === 0 &&
+        cell.getY() === y &&
+        (cell.type === PLAYER || cell.type === TREASURE)
     );
-    players.forEach((player) => {
+    teleporters.forEach((player) => {
       player.setX(7);
       player.setY(y);
     });
@@ -424,10 +482,13 @@ function shift(x, y) {
       .filter((cell) => cell.getX() === x)
       .forEach((cell) => cell.setY(cell.getY() + 1));
     getElement(x, 8).isExtra = true;
-    const players = state.board.filter(
-      (cell) => cell.getX() === x && cell.getY() === 8 && cell.type === PLAYER
+    const teleporters = state.board.filter(
+      (cell) =>
+        cell.getX() === x &&
+        cell.getY() === 8 &&
+        (cell.type === PLAYER || cell.type === TREASURE)
     );
-    players.forEach((player) => {
+    teleporters.forEach((player) => {
       player.setX(x);
       player.setY(1);
     });
@@ -439,10 +500,13 @@ function shift(x, y) {
       .filter((cell) => cell.getX() === x)
       .forEach((cell) => cell.setY(cell.getY() - 1));
     getElement(x, 0).isExtra = true;
-    const players = state.board.filter(
-      (cell) => cell.getX() === x && cell.getY() === 0 && cell.type === PLAYER
+    const teleporters = state.board.filter(
+      (cell) =>
+        cell.getX() === x &&
+        cell.getY() === 0 &&
+        (cell.type === PLAYER || cell.type === TREASURE)
     );
-    players.forEach((player) => {
+    teleporters.forEach((player) => {
       player.setX(x);
       player.setY(7);
     });
@@ -480,7 +544,7 @@ function rotateExtra() {
 
 function showReachable() {
   const current = state.board.find(
-    (player) => player.number === state.currentPlayer
+    (player) => player.type === PLAYER && player.number === state.currentPlayer
   );
   const currentCell = getElement(current.getX(), current.getY());
   state.reachable = getReachable(currentCell);
@@ -562,7 +626,7 @@ function step(cell) {
   if (!state.reachable) return;
   if (!state.reachable.includes(cell)) return;
   const currentPlayer = state.board.find(
-    (player) => player.number === state.currentPlayer
+    (player) => player.type === PLAYER && player.number === state.currentPlayer
   );
   const currentCell = getElement(currentPlayer.getX(), currentPlayer.getY());
   const route = shortestRouteBetween(currentCell, cell);
@@ -573,6 +637,23 @@ function step(cell) {
     }, index * 100);
   });
 
+  const treasure = state.board.find(
+    (t) =>
+      t.type === TREASURE &&
+      t.getX() === cell.getX() &&
+      t.getY() === cell.getY()
+  );
+  if (treasure) {
+    treasure.ref.classList.remove("show");
+    state.board = state.board.filter(
+      (t) =>
+        t.getX() !== cell.getX() ||
+        t.getY() !== cell.getY() ||
+        t.type !== TREASURE
+    );
+    state.found[state.currentPlayer]++;
+    updateRightPanel();
+  }
   hideReachable();
   nextPlayer();
 }
@@ -605,14 +686,29 @@ function shortestRouteBetween(start, end) {
 
 function nextPlayer() {
   const currentPlayer = state.board.find(
-    (player) => player.number === state.currentPlayer
+    (player) => player.type === PLAYER && player.number === state.currentPlayer
   );
   currentPlayer.ref.classList.remove("active");
+  const currentTreasures = state.board.filter(
+    (cell) => cell.getType() === TREASURE && cell.number === state.currentPlayer
+  );
+  currentTreasures.forEach((cell) => {
+    cell.ref.classList.remove("show");
+  });
   state.currentPlayer =
     state.currentPlayer === state.playerCount - 1 ? 0 : state.currentPlayer + 1;
   state.board
-    .find((player) => player.number === state.currentPlayer)
+    .find(
+      (player) =>
+        player.type === PLAYER && player.number === state.currentPlayer
+    )
     .ref.classList.add("active");
+  const nextTreasures = state.board.filter(
+    (cell) => cell.getType() === TREASURE && cell.number === state.currentPlayer
+  );
+  nextTreasures.forEach((cell) => {
+    cell.ref.classList.add("show");
+  });
 
   updateRightPanel();
 }

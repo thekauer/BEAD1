@@ -3,6 +3,7 @@ const RIGHT = 1;
 const DOWN = 2;
 const LEFT = 3;
 const UP = 4;
+const ROTATIONS = [UP, RIGHT, DOWN, LEFT, UP, RIGHT, DOWN, LEFT];
 const WIDTH = 60;
 const HEIGHT = 60;
 const GAP = 3;
@@ -450,13 +451,10 @@ function getConnectionDirections(cell) {
     return rotation % 2 === 0 ? [UP, DOWN] : [LEFT, RIGHT];
   }
   if (type === TURN) {
-    return [RIGHT, DOWN, LEFT, UP, RIGHT].slice(rotation - 1, rotation + 1);
+    return ROTATIONS.slice(rotation, rotation + 2);
   }
   if (type === TRIPLET) {
-    return [RIGHT, DOWN, LEFT, UP, RIGHT, DOWN].slice(
-      rotation - 1,
-      rotation + 2
-    );
+    return ROTATIONS.slice(rotation, rotation + 3);
   }
 }
 

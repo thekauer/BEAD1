@@ -313,9 +313,14 @@ function shift(x, y) {
     state.board
       .filter((cell) => cell.getY() === y)
       .forEach((cell) => cell.setX(cell.getX() + 1));
-    state.board.find(
-      (cell) => cell.getX() === 8 && cell.getY() === y
-    ).isExtra = true;
+    getElement(8, y).isExtra = true;
+    const players = state.board.filter(
+      (cell) => cell.getX() === 8 && cell.getY() === y && cell.type === PLAYER
+    );
+    players.forEach((player) => {
+      player.setX(1);
+      player.setY(y);
+    });
     state.disabled = [8, y];
   }
   if (x === 8) {
@@ -323,9 +328,14 @@ function shift(x, y) {
     state.board
       .filter((cell) => cell.getY() === y)
       .forEach((cell) => cell.setX(cell.getX() - 1));
-    state.board.find(
-      (cell) => cell.getX() === 0 && cell.getY() === y
-    ).isExtra = true;
+    getElement(0, y).isExtra = true;
+    const players = state.board.filter(
+      (cell) => cell.getX() === 0 && cell.getY() === y && cell.type === PLAYER
+    );
+    players.forEach((player) => {
+      player.setX(7);
+      player.setY(y);
+    });
     state.disabled = [0, y];
   }
   if (y === 0) {
@@ -333,9 +343,14 @@ function shift(x, y) {
     state.board
       .filter((cell) => cell.getX() === x)
       .forEach((cell) => cell.setY(cell.getY() + 1));
-    state.board.find(
-      (cell) => cell.getX() === x && cell.getY() === 8
-    ).isExtra = true;
+    getElement(x, 8).isExtra = true;
+    const players = state.board.filter(
+      (cell) => cell.getX() === x && cell.getY() === 8 && cell.type === PLAYER
+    );
+    players.forEach((player) => {
+      player.setX(x);
+      player.setY(1);
+    });
     state.disabled = [x, 8];
   }
   if (y === 8) {
@@ -343,9 +358,14 @@ function shift(x, y) {
     state.board
       .filter((cell) => cell.getX() === x)
       .forEach((cell) => cell.setY(cell.getY() - 1));
-    state.board.find(
-      (cell) => cell.getX() === x && cell.getY() === 0
-    ).isExtra = true;
+    getElement(x, 0).isExtra = true;
+    const players = state.board.filter(
+      (cell) => cell.getX() === x && cell.getY() === 0 && cell.type === PLAYER
+    );
+    players.forEach((player) => {
+      player.setX(x);
+      player.setY(7);
+    });
     state.disabled = [x, 0];
   }
   showReachable();
@@ -479,18 +499,28 @@ function step(cell) {
 function shortestRouteBetween(start, end) {
   const visited = [];
   const queue = [start];
+  const pred = {};
+  const getId = (cell) => `${cell.getX()}-${cell.getY()}`;
+  pred[getId(start)] = null;
   while (queue.length > 0) {
     const current = queue.shift();
-    if (visited.includes(current)) continue;
+    if (current === end) break;
     visited.push(current);
-    if (current === end) return visited;
     const neighbours = getNeighbours(current);
     neighbours.forEach((neighbour) => {
       if (visited.includes(neighbour)) return;
+      pred[getId(neighbour)] = current;
       queue.push(neighbour);
     });
   }
-  return visited;
+  const route = [];
+  let current = end;
+  while (current !== start) {
+    route.push(current);
+    current = pred[getId(current)];
+  }
+  route.push(start);
+  return route.reverse();
 }
 
 function nextPlayer() {

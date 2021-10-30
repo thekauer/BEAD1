@@ -6,10 +6,13 @@ const UP = 4;
 const WIDTH = 60;
 const HEIGHT = 60;
 const GAP = 3;
+const PLAYER_GAP = 5;
+const PLAYER_SIZE = 20;
 const STRAIGHT = 0;
 const TURN = 1;
 const TRIPLET = 2;
 const NONE = 3;
+const PLAYER = 4;
 const PLAYER_COLORS = ["#cc0000", "#007acc", "#2ecb2d", "#ffe600"];
 let state = {
   page: "main",
@@ -143,21 +146,44 @@ function randomBetween(min, max) {
 }
 
 class Element {
-  constructor(x, y, type, rotation, players = []) {
+  constructor(x, y, type, rotation) {
     this.type = type;
     this.ref = document.createElement("div");
     if ([TURN, TRIPLET, STRAIGHT].includes(type)) {
       this.ref.classList.add("door");
+      this.ref.classList.add("cell");
       this.ref.style.backgroundImage = `url(./cell_${this.type}.svg)`;
       this.ref.addEventListener("click", () => {
         step(this);
       });
     }
-    this.ref.classList.add("cell");
+    if (type === PLAYER) {
+      this.ref.classList.add("player");
+      this.ref.classList.add("cell");
+    }
+    this.setRotation(rotation);
+    switch (rotation) {
+      case RIGHT:
+        this.offset = { x: 3 * PLAYER_GAP + PLAYER_SIZE, y: PLAYER_GAP };
+        break;
+      case DOWN:
+        this.offset = {
+          x: 3 * PLAYER_GAP + PLAYER_SIZE,
+          y: 3 * PLAYER_GAP + PLAYER_SIZE,
+        };
+        break;
+      case LEFT:
+        this.offset = { x: PLAYER_GAP, y: 3 * PLAYER_GAP + PLAYER_SIZE };
+        break;
+      case UP:
+        this.offset = { x: PLAYER_GAP, y: PLAYER_GAP };
+        break;
+    }
+    if (type !== PLAYER) {
+      this.offset = { x: 0, y: 0 };
+    }
     this.setX(x);
     this.setY(y);
-    this.setRotation(rotation);
-    this.players = players;
   }
 
   getX() {
@@ -171,14 +197,14 @@ class Element {
   }
   setX(newX) {
     this.x = newX;
-    this.ref.style.left = `${this.x * WIDTH + this.x * GAP}px`;
+    this.ref.style.left = `${this.x * WIDTH + this.x * GAP + this.offset.x}px`;
   }
   getType() {
     return this.type;
   }
   setY(newY) {
     this.y = newY;
-    this.ref.style.top = `${this.y * HEIGHT + this.y * GAP}px`;
+    this.ref.style.top = `${this.y * HEIGHT + this.y * GAP + this.offset.y}px`;
   }
   setRotation(newRotation) {
     this.rotation = newRotation;
@@ -191,7 +217,9 @@ function createElement(type, x, y, rotation, players = []) {
 }
 
 function getElement(x, y) {
-  return state.board.find((cell) => cell.getX() === x && cell.getY() === y);
+  return state.board.find(
+    (cell) => cell.getX() === x && cell.getY() === y && cell.type !== PLAYER
+  );
 }
 
 const createStarterBoard = () => {
@@ -249,16 +277,6 @@ function renderBoard() {
   const board = document.querySelector("#board");
 
   state.board.forEach((cell) => {
-    if (cell?.players.length > 0) {
-      cell.players?.forEach((player) => {
-        const playerDiv = document.createElement("div");
-        if (player.number === state.currentPlayer)
-          playerDiv.classList.add("active");
-        playerDiv.classList.add("player");
-        playerDiv.style.backgroundColor = player.color;
-        cell.ref.appendChild(playerDiv);
-      });
-    }
     if (cell.ref && cell.type !== undefined) board.appendChild(cell.ref);
   });
 }
@@ -273,18 +291,13 @@ function initializePlayers() {
 
   for (let i = 0; i < state.playerCount; i++) {
     const [x, y] = corners[i];
-    const player = {
-      number: i,
-      color: PLAYER_COLORS[i],
-      x,
-      y,
-    };
-    const cell = state.board.find((cell) => cell.x === x && cell.y === y);
-    if (cell) {
-      cell.players.push(player);
-    } else {
-      state.board.push(createElement(NONE, x, y, UP, [player]));
+    const player = createElement(PLAYER, x, y, [UP, LEFT, RIGHT, DOWN][i]);
+    player.ref.style.backgroundColor = PLAYER_COLORS[i];
+    player.number = i;
+    if (i === 0) {
+      player.ref.classList.add("active");
     }
+    state.board.push(player);
   }
   state.currentPlayer = 0;
 }
@@ -365,10 +378,11 @@ function rotateExtra() {
 }
 
 function showReachable() {
-  const current = state.board.find((cell) =>
-    cell.players.map(({ number }) => number).includes(state.currentPlayer)
+  const current = state.board.find(
+    (player) => player.number === state.currentPlayer
   );
-  state.reachable = getReachable(current);
+  const currentCell = getElement(current.getX(), current.getY());
+  state.reachable = getReachable(currentCell);
   state.reachable.forEach((cell) => {
     cell.ref.classList.add("reachable");
   });
@@ -377,7 +391,7 @@ function hideReachable() {
   state.reachable.forEach((cell) => {
     cell.ref.classList.remove("reachable");
   });
-  state.reachable = [];
+  state.reachable = undefined;
 }
 
 function getReachable(cell) {
@@ -392,7 +406,7 @@ function getReachable(cell) {
     const neighbours = getNeighbours(current);
     neighbours.forEach((neighbour) => {
       if (visited.includes(neighbour)) return;
-      if (neighbour.players.length === 0) queue.push(neighbour);
+      queue.push(neighbour);
     });
   }
   return reachable;
@@ -449,15 +463,46 @@ function getConnectionDirections(cell) {
 function step(cell) {
   if (!state.reachable) return;
   if (!state.reachable.includes(cell)) return;
-  const current = state.board.find((cell) =>
-    cell.players.map(({ number }) => number).includes(state.currentPlayer)
-  );
-  const currentPlayer = current.players.find(
+  const currentPlayer = state.board.find(
     (player) => player.number === state.currentPlayer
   );
-  console.log("currentPlayer: ", currentPlayer);
-  current.players = current.players.filter(
-    (player) => player.number !== state.currentPlayer
+  const currentCell = getElement(currentPlayer.getX(), currentPlayer.getY());
+  const route = shortestRouteBetween(currentCell, cell);
+  route.forEach((cell, index) => {
+    setTimeout(() => {
+      currentPlayer.setX(cell.getX());
+      currentPlayer.setY(cell.getY());
+    }, index * 100);
+  });
+
+  hideReachable();
+  nextPlayer();
+}
+function shortestRouteBetween(start, end) {
+  const visited = [];
+  const queue = [start];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (visited.includes(current)) continue;
+    visited.push(current);
+    if (current === end) return visited;
+    const neighbours = getNeighbours(current);
+    neighbours.forEach((neighbour) => {
+      if (visited.includes(neighbour)) return;
+      queue.push(neighbour);
+    });
+  }
+  return visited;
+}
+
+function nextPlayer() {
+  const currentPlayer = state.board.find(
+    (player) => player.number === state.currentPlayer
   );
-  cell.players.push(currentPlayer);
+  currentPlayer.ref.classList.remove("active");
+  state.currentPlayer =
+    state.currentPlayer === state.playerCount - 1 ? 0 : state.currentPlayer + 1;
+  state.board
+    .find((player) => player.number === state.currentPlayer)
+    .ref.classList.add("active");
 }

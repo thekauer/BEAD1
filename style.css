@@ -22,10 +22,6 @@ body {
   height: 60px;
   transition: all 0.5s;
   background-color: #2d2d2d;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  place-content: center;
 }
 .door {
   border: 1px solid #252526;
@@ -38,10 +34,12 @@ body {
 }
 
 .player {
+  position: absolute;
   width: 20px;
   height: 20px;
-  margin: 5px;
+  transition: all 0.1s;
   border-radius: 50%;
+  z-index: 3;
 }
 
 .player.active {

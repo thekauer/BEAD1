@@ -103,6 +103,11 @@ function renderGame() {
 
 function renderControls() {
   const board = document.querySelector("#board");
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "r") {
+      rotateExtra();
+    }
+  });
   const createArrow = (rotation, x, y) => {
     const arrow = document.createElement("div");
     arrow.classList.add("arrow");
@@ -341,4 +346,11 @@ function highlight(x, y) {
     extra.setX(x);
     extra.setY(y + 1);
   }
+}
+function rotateExtra() {
+  const extra = state.board.find((cell) => cell.isExtra);
+  if (!extra) return;
+  extra.getRotation() === 3
+    ? extra.setRotation(0)
+    : extra.setRotation(extra.getRotation() + 1);
 }

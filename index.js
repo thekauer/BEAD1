@@ -113,6 +113,9 @@ function renderControls() {
     arrow.addEventListener("click", () => {
       shift(x, y);
     });
+    arrow.addEventListener("mouseover", () => {
+      highlight(x, y);
+    });
     board.appendChild(arrow);
   };
   createArrow(DOWN, 2, 0);
@@ -220,7 +223,9 @@ const fillBoard = () => {
       state.board.push(createElement(type, i, j, randomBetween(0, 3)));
     }
   }
-  state.board.push(createElement(left.indexOf(1), 0, 0, UP));
+  const extra = createElement(left.indexOf(1), 0, 0, UP);
+  extra.isExtra = true;
+  state.board.push(extra);
 };
 
 function initializeBoard() {
@@ -273,24 +278,67 @@ function initializePlayers() {
 }
 
 function shift(x, y) {
+  if (JSON.stringify(state.disabled) === JSON.stringify([x, y])) return;
+  const extra = state.board.find((cell) => cell.isExtra);
+  extra.isExtra = false;
   if (x === 0) {
+    extra.setX(0);
     state.board
       .filter((cell) => cell.getY() === y)
       .forEach((cell) => cell.setX(cell.getX() + 1));
+    state.board.find(
+      (cell) => cell.getX() === 8 && cell.getY() === y
+    ).isExtra = true;
+    state.disabled = [8, y];
   }
   if (x === 8) {
+    extra.setX(8);
     state.board
       .filter((cell) => cell.getY() === y)
       .forEach((cell) => cell.setX(cell.getX() - 1));
+    state.board.find(
+      (cell) => cell.getX() === 0 && cell.getY() === y
+    ).isExtra = true;
+    state.disabled = [0, y];
   }
   if (y === 0) {
+    extra.setY(0);
     state.board
       .filter((cell) => cell.getX() === x)
       .forEach((cell) => cell.setY(cell.getY() + 1));
+    state.board.find(
+      (cell) => cell.getX() === x && cell.getY() === 8
+    ).isExtra = true;
+    state.disabled = [x, 8];
   }
   if (y === 8) {
+    extra.setY(8);
     state.board
       .filter((cell) => cell.getX() === x)
       .forEach((cell) => cell.setY(cell.getY() - 1));
+    state.board.find(
+      (cell) => cell.getX() === x && cell.getY() === 0
+    ).isExtra = true;
+    state.disabled = [x, 0];
+  }
+}
+
+function highlight(x, y) {
+  const extra = state.board.find((cell) => cell.isExtra);
+  if (x === 0) {
+    extra.setX(x - 1);
+    extra.setY(y);
+  }
+  if (x === 8) {
+    extra.setX(x + 1);
+    extra.setY(y);
+  }
+  if (y === 0) {
+    extra.setX(x);
+    extra.setY(y - 1);
+  }
+  if (y === 8) {
+    extra.setX(x);
+    extra.setY(y + 1);
   }
 }

@@ -5,6 +5,7 @@ const LEFT = 3;
 const UP = 4;
 const WIDTH = 60;
 const HEIGHT = 60;
+const GAP = 3;
 const STRAIGHT = 0;
 const TURN = 1;
 const TRIPLET = 2;
@@ -113,8 +114,8 @@ function renderControls() {
     arrow.classList.add("arrow");
     arrow.classList.add("cell");
     arrow.style.transform = `rotate(${90 * rotation}deg)`;
-    arrow.style.top = `${y * HEIGHT}px`;
-    arrow.style.left = `${x * WIDTH}px`;
+    arrow.style.top = `${y * HEIGHT + y * GAP}px`;
+    arrow.style.left = `${x * WIDTH + x * GAP}px`;
     arrow.addEventListener("click", () => {
       shift(x, y);
     });
@@ -148,6 +149,9 @@ class Element {
     if ([TURN, TRIPLET, STRAIGHT].includes(type)) {
       this.ref.classList.add("door");
       this.ref.style.backgroundImage = `url(./cell_${this.type}.svg)`;
+      this.ref.addEventListener("click", () => {
+        step(this);
+      });
     }
     this.ref.classList.add("cell");
     this.setX(x);
@@ -167,14 +171,14 @@ class Element {
   }
   setX(newX) {
     this.x = newX;
-    this.ref.style.left = `${this.x * WIDTH}px`;
+    this.ref.style.left = `${this.x * WIDTH + this.x * GAP}px`;
   }
   getType() {
     return this.type;
   }
   setY(newY) {
     this.y = newY;
-    this.ref.style.top = `${this.y * HEIGHT}px`;
+    this.ref.style.top = `${this.y * HEIGHT + this.y * GAP}px`;
   }
   setRotation(newRotation) {
     this.rotation = newRotation;
@@ -440,4 +444,20 @@ function getConnectionDirections(cell) {
       rotation + 2
     );
   }
+}
+
+function step(cell) {
+  if (!state.reachable) return;
+  if (!state.reachable.includes(cell)) return;
+  const current = state.board.find((cell) =>
+    cell.players.map(({ number }) => number).includes(state.currentPlayer)
+  );
+  const currentPlayer = current.players.find(
+    (player) => player.number === state.currentPlayer
+  );
+  console.log("currentPlayer: ", currentPlayer);
+  current.players = current.players.filter(
+    (player) => player.number !== state.currentPlayer
+  );
+  cell.players.push(currentPlayer);
 }

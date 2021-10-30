@@ -2,9 +2,56 @@ body {
   background-color: #1e1e1e;
   display: grid;
   place-items: center;
+  font-family: system-ui;
 }
 #root {
   position: relative;
+}
+.main {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  justify-content: center;
+}
+#right-panel {
+  margin-left: 3rem;
+  padding: 5rem;
+  border-radius: 10px;
+}
+.row {
+  position: relative;
+  display: flex;
+  background-color: #2d2d2d;
+  color: white;
+  gap: 1rem;
+  padding: 0.5rem;
+  border-left-color: transparent;
+  transition: all 0.3s ease-in-out;
+}
+.treasure-countainer {
+  position: relative;
+  display: flex;
+}
+.treasure-countainer img {
+  margin-left: -0.5rem;
+}
+.treasure {
+  width: 20px;
+  height: 20px;
+}
+.row.active {
+  border-left-width: 5px;
+  border-left-style: solid;
+}
+.row.active .player {
+  animation: pulse 1s ease infinite;
+}
+.row .found-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.row .found-container img {
+  margin: 0 0.5rem;
 }
 #board {
   width: 540px;

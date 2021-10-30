@@ -101,9 +101,87 @@ function initializeGame() {
 }
 
 function renderGame() {
-  root.innerHTML = `<div id="board"></div>`;
+  root.innerHTML = "";
+  const main = document.createElement("main");
+  main.classList.add("main");
+  const leftPanel = document.createElement("div");
+  leftPanel.id = "left-panel";
+  const rightPanel = document.createElement("div");
+  rightPanel.id = "right-panel";
+  const board = document.createElement("div");
+  board.id = "board";
+  main.appendChild(leftPanel);
+  main.appendChild(board);
+  main.appendChild(rightPanel);
+  root.appendChild(main);
   renderControls();
+  renderRightPanel();
   renderBoard();
+}
+function renderRightPanel() {
+  const rightPanel = document.getElementById("right-panel");
+  rightPanel.innerHTML = "";
+  for (let i = 0; i < state.playerCount; i++) {
+    const row = document.createElement("div");
+    if (i === state.currentPlayer) row.classList.add("active");
+    if (i === 0) {
+      row.style.borderRadius = "5px 5px 0 0";
+    }
+    if (i === state.playerCount - 1) {
+      row.style.borderRadius = "0 0 5px 5px";
+    }
+    row.classList.add("row");
+    row.style.borderLeftColor = PLAYER_COLORS[i];
+    const player = document.createElement("div");
+    player.classList.add("player");
+    player.style.position = "relative";
+    player.style.backgroundColor = PLAYER_COLORS[i];
+    row.appendChild(player);
+    const playerName = document.createElement("span");
+    playerName.innerText = `Player ${i + 1}`;
+    row.appendChild(playerName);
+
+    const foundContainer = document.createElement("div");
+    foundContainer.classList.add("found-container");
+    const found = document.createElement("span");
+    found.innerText = `Found: ${state.found[i]}`;
+    foundContainer.appendChild(found);
+    const openTreasure = document.createElement("img");
+    openTreasure.classList.add("treasure");
+    openTreasure.src = "open_chest.png";
+    foundContainer.appendChild(openTreasure);
+    foundContainer.appendChild(
+      document.createTextNode(`/${state.treasureCount}`)
+    );
+    const closeTreasure = document.createElement("img");
+    closeTreasure.classList.add("treasure");
+    closeTreasure.src = "closed_chest.png";
+    foundContainer.appendChild(closeTreasure);
+    row.appendChild(foundContainer);
+
+    const treasureCountainer = document.createElement("div");
+    treasureCountainer.classList.add("treasure-countainer");
+    for (let j = 0; j < state.treasureCount - state.found[i]; j++) {
+      const treasure = document.createElement("img");
+      treasure.classList.add("treasure");
+      treasure.src = "closed_chest.png";
+      treasure.style.zIndex = 4 + j;
+      treasureCountainer.appendChild(treasure);
+    }
+    row.appendChild(treasureCountainer);
+    rightPanel.appendChild(row);
+  }
+}
+function updateRightPanel() {
+  const rightPanel = document.getElementById("right-panel");
+  const activeRow = rightPanel.querySelector(".active");
+  activeRow.classList.remove("active");
+  const rows = rightPanel.querySelectorAll(".row");
+  const row = rows[state.currentPlayer];
+  console.log("row: ", row);
+  row.classList.add("active");
+  const found = row.querySelector(".found");
+  found.innerText = `Found: ${state.found[state.currentPlayer]}`;
 }
 
 function renderControls() {
@@ -283,6 +361,7 @@ function renderBoard() {
 }
 
 function initializePlayers() {
+  state.found = {};
   const corners = [
     [1, 1],
     [1, 7],
@@ -298,6 +377,7 @@ function initializePlayers() {
     if (i === 0) {
       player.ref.classList.add("active");
     }
+    state.found[i] = 0;
     state.board.push(player);
   }
   state.currentPlayer = 0;
@@ -533,4 +613,6 @@ function nextPlayer() {
   state.board
     .find((player) => player.number === state.currentPlayer)
     .ref.classList.add("active");
+
+  updateRightPanel();
 }

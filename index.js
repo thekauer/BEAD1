@@ -16,6 +16,12 @@ const NONE = 3;
 const PLAYER = 4;
 const TREASURE = 5;
 const PLAYER_COLORS = ["#cc0000", "#007acc", "#2ecb2d", "#ffe600"];
+const CORNERS = [
+  [1, 1],
+  [1, 7],
+  [7, 1],
+  [7, 7],
+];
 let state = {
   page: "main",
 };
@@ -164,7 +170,7 @@ function renderRightPanel() {
 
     const treasureCountainer = document.createElement("div");
     treasureCountainer.classList.add("treasure-countainer");
-    for (let j = 0; j < state.treasureCount - state.found[i]; j++) {
+    for (let j = 0; j < state.found[i]; j++) {
       const treasure = document.createElement("img");
       treasure.classList.add("treasure");
       treasure.src = "closed_chest.png";
@@ -187,11 +193,7 @@ function updateRightPanel() {
   found.innerText = `Found: ${state.found[state.currentPlayer]}`;
   const treasureCountainer = row.querySelector(".treasure-countainer");
   treasureCountainer.innerHTML = "";
-  for (
-    let j = 0;
-    j < state.treasureCount - state.found[state.currentPlayer];
-    j++
-  ) {
+  for (let j = 0; j < state.found[state.currentPlayer]; j++) {
     const treasure = document.createElement("img");
     treasure.classList.add("treasure");
     treasure.src = "closed_chest.png";
@@ -414,15 +416,8 @@ function renderBoard() {
 
 function initializePlayers() {
   state.found = {};
-  const corners = [
-    [1, 1],
-    [1, 7],
-    [7, 1],
-    [7, 7],
-  ];
-
   for (let i = 0; i < state.playerCount; i++) {
-    const [x, y] = corners[i];
+    const [x, y] = CORNERS[i];
     const player = createElement(PLAYER, x, y, [UP, LEFT, RIGHT, DOWN][i]);
     player.ref.style.backgroundColor = PLAYER_COLORS[i];
     player.number = i;
@@ -685,6 +680,10 @@ function shortestRouteBetween(start, end) {
 }
 
 function nextPlayer() {
+  CORNERS.forEach((corner) => {
+    const cornerCell = getElement(...corner);
+    cornerCell.ref.classList.remove("finishing");
+  });
   const currentPlayer = state.board.find(
     (player) => player.type === PLAYER && player.number === state.currentPlayer
   );
@@ -709,6 +708,14 @@ function nextPlayer() {
   nextTreasures.forEach((cell) => {
     cell.ref.classList.add("show");
   });
+  if (state.found[state.currentPlayer] == state.treasureCount) {
+    document.documentElement.style.setProperty(
+      "--finish-color",
+      PLAYER_COLORS[state.currentPlayer]
+    );
+    const corner = getElement(...CORNERS[state.currentPlayer]);
+    corner.ref.classList.add("finishing");
+  }
 
   updateRightPanel();
 }

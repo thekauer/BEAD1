@@ -169,6 +169,9 @@ class Element {
     this.x = newX;
     this.ref.style.left = `${this.x * WIDTH}px`;
   }
+  getType() {
+    return this.type;
+  }
   setY(newY) {
     this.y = newY;
     this.ref.style.top = `${this.y * HEIGHT}px`;
@@ -284,6 +287,7 @@ function initializePlayers() {
 
 function shift(x, y) {
   if (JSON.stringify(state.disabled) === JSON.stringify([x, y])) return;
+  if (state.reachable) return;
   const extra = state.board.find((cell) => cell.isExtra);
   extra.isExtra = false;
   if (x === 0) {
@@ -326,6 +330,7 @@ function shift(x, y) {
     ).isExtra = true;
     state.disabled = [x, 0];
   }
+  showReachable();
 }
 
 function highlight(x, y) {
@@ -353,4 +358,86 @@ function rotateExtra() {
   extra.getRotation() === 3
     ? extra.setRotation(0)
     : extra.setRotation(extra.getRotation() + 1);
+}
+
+function showReachable() {
+  const current = state.board.find((cell) =>
+    cell.players.map(({ number }) => number).includes(state.currentPlayer)
+  );
+  state.reachable = getReachable(current);
+  state.reachable.forEach((cell) => {
+    cell.ref.classList.add("reachable");
+  });
+}
+function hideReachable() {
+  state.reachable.forEach((cell) => {
+    cell.ref.classList.remove("reachable");
+  });
+  state.reachable = [];
+}
+
+function getReachable(cell) {
+  const reachable = [];
+  const visited = [];
+  const queue = [cell];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (visited.includes(current)) continue;
+    visited.push(current);
+    reachable.push(current);
+    const neighbours = getNeighbours(current);
+    neighbours.forEach((neighbour) => {
+      if (visited.includes(neighbour)) return;
+      if (neighbour.players.length === 0) queue.push(neighbour);
+    });
+  }
+  return reachable;
+}
+
+function getNeighbours(cell) {
+  const neighbours = [];
+  if (!cell) return neighbours;
+  const x = cell.getX();
+  const y = cell.getY();
+  const connections = getConnectionDirections(cell);
+  if (connections.includes(LEFT) && x > 0) {
+    const elem = getElement(x - 1, y);
+    const elemConnections = getConnectionDirections(elem);
+    if (elemConnections.includes(RIGHT)) neighbours.push(elem);
+  }
+  if (connections.includes(RIGHT) && x < 8) {
+    const elem = getElement(x + 1, y);
+    const elemConnections = getConnectionDirections(elem);
+    if (elemConnections.includes(LEFT)) neighbours.push(elem);
+  }
+  if (connections.includes(DOWN) && y > 0) {
+    const elem = getElement(x, y + 1);
+    const elemConnections = getConnectionDirections(elem);
+    if (elemConnections.includes(UP)) neighbours.push(elem);
+  }
+  if (connections.includes(UP) && y < 8) {
+    const elem = getElement(x, y - 1);
+    const elemConnections = getConnectionDirections(elem);
+    if (elemConnections.includes(DOWN)) neighbours.push(elem);
+  }
+  return neighbours.filter((neighbour) => neighbour !== undefined);
+}
+
+function getConnectionDirections(cell) {
+  if (!cell) return [];
+  const type = cell.getType();
+  const rotation = cell.getRotation();
+  if (type === NONE) return [];
+  if (type === STRAIGHT) {
+    return rotation % 2 === 0 ? [UP, DOWN] : [LEFT, RIGHT];
+  }
+  if (type === TURN) {
+    return [RIGHT, DOWN, LEFT, UP, RIGHT].slice(rotation - 1, rotation + 1);
+  }
+  if (type === TRIPLET) {
+    return [RIGHT, DOWN, LEFT, UP, RIGHT, DOWN].slice(
+      rotation - 1,
+      rotation + 2
+    );
+  }
 }

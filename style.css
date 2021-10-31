@@ -230,4 +230,27 @@ label {
   color: white;
   font-weight: 500;
   font-size: large;
+  display: flex;
+  align-items: center;
+}
+
+.buttons {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+kbd {
+  color: white;
+  border-radius: 2px;
+  border: 1px solid white;
+  padding: 0.25rem 0.5rem;
+  margin: 0 0.5rem;
+  font-size: 1rem;
+  transition: all 0.3s ease-in-out;
+}
+#description-menu {
+  max-width: 500px;
+  color: white;
 }

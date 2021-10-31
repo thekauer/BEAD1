@@ -40,9 +40,41 @@ function goTo(page) {
       initializeGame();
       renderGame();
       break;
+    case "continue":
+      ressurectCells();
+      renderGame();
+      break;
+    case "description":
+      renderDescription();
+      break;
     default:
       renderMain();
   }
+}
+
+function renderDescription() {
+  const root = document.getElementById("root");
+  root.innerHTML = `
+  <div id="description-menu" class="menu">
+    <h1>Description</h1>
+    <p>
+      The goal of the game is to collect all the treasures.
+      Players take turns moving around the board, collecting treasures.
+      First a player must push a room into the board, before doing so the player may rotate said room by pressing the <kbd>R</kbd> key.
+      Then rooms may be pushed into the board by clicking the arrows.
+      By doing so one room will be pushed out of the board. The next player won't be able to just push this room into the board again, in other words the next playercannot reverse the last move.
+      Once you push a room into the board, rooms that are reachable for you player will be highlighted in green.
+      Click on any of these green to move your player to that room.
+      Some rooms contain treasures, these can be collected by clicking on them.
+      Once you've collected all the treasures, you have to move back your starting room, which will be highlighted in your color.
+      If you reach the starting room, you win the game.
+    </p>
+    <button id="back">Back</button>
+  </div>`;
+  const backButton = document.getElementById("back");
+  backButton.addEventListener("click", () => {
+    goTo("main");
+  });
 }
 
 function renderMain() {
@@ -63,6 +95,14 @@ function renderMain() {
   const descriptionButton = document.getElementById("description");
   descriptionButton.addEventListener("click", () => {
     goTo("description");
+  });
+  const continueGameButton = document.getElementById("continue");
+  if (localStorage.getItem("state")) {
+    continueGameButton.removeAttribute("disabled");
+  }
+  continueGameButton.addEventListener("click", () => {
+    state = JSON.parse(localStorage.getItem("state"));
+    goTo("continue");
   });
 }
 
@@ -101,6 +141,7 @@ function renderNewGame() {
     goTo("main");
   });
 }
+
 function initializeGame() {
   initializeBoard();
   initializePlayers();
@@ -124,7 +165,9 @@ function renderGame() {
   renderControls();
   renderRightPanel();
   renderBoard();
+  disableArrow();
 }
+
 function renderRightPanel() {
   const rightPanel = document.getElementById("right-panel");
   rightPanel.innerHTML = "";
@@ -180,8 +223,29 @@ function renderRightPanel() {
     row.appendChild(treasureCountainer);
     rows.appendChild(row);
   }
+
+  const buttons = document.createElement("div");
+  buttons.classList.add("buttons");
+  const rotateLabel = document.createElement("label");
+  rotateLabel.innerHTML = "Press <kbd>R</kbd> to rotate";
+  buttons.appendChild(rotateLabel);
+  const saveButton = document.createElement("button");
+  saveButton.innerText = "Save";
+  saveButton.addEventListener("click", () => {
+    saveGame();
+  });
+  buttons.appendChild(saveButton);
+  const backButton = document.createElement("button");
+  backButton.innerText = "Back";
+  backButton.addEventListener("click", () => {
+    goTo("main");
+  });
+  buttons.appendChild(backButton);
+
   rightPanel.appendChild(rows);
+  rightPanel.appendChild(buttons);
 }
+
 function updateRightPanel() {
   const rightPanel = document.getElementById("right-panel");
   const activeRow = rightPanel.querySelector(".active");
@@ -207,26 +271,30 @@ function rotateListener(e) {
     rotateExtra();
   }
 }
-function renderControls() {
+
+function createArrow(rotation, x, y) {
   const board = document.querySelector("#board");
-  window.addEventListener("keydown", rotateListener);
-  const createArrow = (rotation, x, y) => {
-    const arrow = document.createElement("div");
-    arrow.classList.add("arrow");
-    arrow.classList.add("cell");
-    arrow.style.transform = `rotate(${90 * rotation}deg)`;
-    arrow.style.top = `${y * HEIGHT + y * GAP}px`;
-    arrow.style.left = `${x * WIDTH + x * GAP}px`;
-    arrow.addEventListener("click", () => {
-      shift(x, y);
-    });
-    arrow.addEventListener("mouseover", () => {
-      highlight(x, y);
-    });
-    if (!state.arrows) state.arrows = [];
-    state.arrows.push({ arrow, x, y });
-    board.appendChild(arrow);
-  };
+
+  const arrow = document.createElement("div");
+  arrow.classList.add("arrow");
+  arrow.classList.add("cell");
+  arrow.style.transform = `rotate(${90 * rotation}deg)`;
+  arrow.style.top = `${y * HEIGHT + y * GAP}px`;
+  arrow.style.left = `${x * WIDTH + x * GAP}px`;
+  arrow.addEventListener("click", () => {
+    shift(x, y);
+  });
+  arrow.addEventListener("mouseover", () => {
+    highlight(x, y);
+  });
+  if (!state.arrows) state.arrows = [];
+  state.arrows.push({ arrow, x, y });
+  board.appendChild(arrow);
+}
+
+function createArrows() {
+  state.arrows = undefined;
+
   createArrow(DOWN, 2, 0);
   createArrow(DOWN, 4, 0);
   createArrow(DOWN, 6, 0);
@@ -239,6 +307,11 @@ function renderControls() {
   createArrow(LEFT, 8, 2);
   createArrow(LEFT, 8, 4);
   createArrow(LEFT, 8, 6);
+}
+
+function renderControls() {
+  window.addEventListener("keydown", rotateListener);
+  createArrows();
 }
 
 function randomBetween(min, max) {
@@ -317,8 +390,8 @@ class Element {
   }
 }
 
-function createElement(type, x, y, rotation, players = []) {
-  return new Element(x, y, type, rotation, players);
+function createElement(type, x, y, rotation) {
+  return new Element(x, y, type, rotation);
 }
 
 function getElement(x, y) {
@@ -514,12 +587,15 @@ function shift(x, y) {
   disableArrow();
   showReachable();
 }
+
 function disableArrow() {
+  if (!state.disabled) return;
   const [x, y] = state.disabled;
   state.arrows
     .find((arrow) => arrow.x === x && arrow.y === y)
     .arrow.classList.add("disabled");
 }
+
 function enableArrow() {
   if (!state.disabled) return;
   const [x, y] = state.disabled;
@@ -547,6 +623,7 @@ function highlight(x, y) {
     extra.setY(y + 1);
   }
 }
+
 function rotateExtra() {
   const extra = state.board.find((cell) => cell.isExtra);
   if (!extra) return;
@@ -565,6 +642,7 @@ function showReachable() {
     cell.ref.classList.add("reachable");
   });
 }
+
 function hideReachable() {
   state.reachable.forEach((cell) => {
     cell.ref.classList.remove("reachable");
@@ -796,4 +874,27 @@ function won() {
 
   winModal.appendChild(winModalContent);
   root.appendChild(winModal);
+}
+
+function saveGame() {
+  localStorage.setItem("state", JSON.stringify(state));
+}
+
+function ressurectCells() {
+  let playerNumber = 0;
+  state.page = "game";
+  state.board = state.board.map(({ type, x, y, rotation }) => {
+    const elem = createElement(type, x, y, rotation);
+    if (type === PLAYER) {
+      elem.number = playerNumber++;
+      elem.ref.style.backgroundColor = PLAYER_COLORS[elem.number];
+      if (elem.number === state.currentPlayer) {
+        elem.ref.classList.add("active");
+      }
+    }
+    if (x === -1 || y === -1 || x === 9 || y === 9) {
+      elem.isExtra = true;
+    }
+    return elem;
+  });
 }

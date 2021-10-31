@@ -40,9 +40,6 @@ function goTo(page) {
       initializeGame();
       renderGame();
       break;
-    case "gameOver":
-      renderGameOver();
-      break;
     default:
       renderMain();
   }
@@ -72,10 +69,12 @@ function renderMain() {
 function renderNewGame() {
   root.innerHTML = `
   <div id="new-game-menu" class="menu">
-    <input type="number" id="player-count" min="1" max="4" value="2" />
-    <input type="number" id="treasure-count" min="1" value="2" />
+    <label for="player-count">Players:</label>
+    <input type="number" name="player-count" id="player-count" min="1" max="4" value="2" />
+    <label for="treasure-count">Treasures:</label>
+    <input type="number" id="treasure-count" min="1" value="2" name="treasure-count" />
     <button id="start">Start</button>
-    <button id="cancel">Cancel</button>
+    <button id="cancel">Back</button>
     </div>`;
   const startButton = document.getElementById("start");
   const playerCountInput = document.getElementById("player-count");
@@ -631,6 +630,12 @@ function step(cell) {
       currentPlayer.setY(cell.getY());
     }, index * 100);
   });
+  if (currentPlayerIsFinishing()) {
+    const [x, y] = CORNERS[state.currentPlayer];
+    if (x === cell.getX() && y === cell.getY()) {
+      won();
+    }
+  }
 
   const treasure = state.board.find(
     (t) =>
@@ -708,7 +713,7 @@ function nextPlayer() {
   nextTreasures.forEach((cell) => {
     cell.ref.classList.add("show");
   });
-  if (state.found[state.currentPlayer] == state.treasureCount) {
+  if (currentPlayerIsFinishing()) {
     document.documentElement.style.setProperty(
       "--finish-color",
       PLAYER_COLORS[state.currentPlayer]
@@ -718,4 +723,58 @@ function nextPlayer() {
   }
 
   updateRightPanel();
+}
+
+function currentPlayerIsFinishing() {
+  return state.found[state.currentPlayer] == state.treasureCount;
+}
+
+function won() {
+  const root = document.getElementById("root");
+  const winModal = document.createElement("div");
+  winModal.classList.add("win-modal");
+
+  const winModalContent = document.createElement("div");
+  winModalContent.classList.add("win-modal-content");
+
+  const winModalHeader = document.createElement("h1");
+  winModalHeader.style.color = PLAYER_COLORS[state.currentPlayer];
+  winModalHeader.innerText = `Player ${state.currentPlayer + 1} won!`;
+
+  const winModalText = document.createElement("b");
+  winModalText.style.color = "white";
+  winModalText.innerText = `Congratulations! You found all the treasures!`;
+
+  const footer = document.createElement("div");
+  footer.classList.add("footer");
+  const playAgainButton = document.createElement("button");
+  playAgainButton.innerText = "Play again";
+  playAgainButton.addEventListener("click", () => {
+    root.removeChild(winModal);
+    const { treasureCount, playerCount } = state;
+    state = {
+      page: "main",
+      treasureCount,
+      playerCount,
+    };
+    goTo("game");
+  });
+  const backToMainMenuButton = document.createElement("button");
+  backToMainMenuButton.innerText = "Back to main menu";
+  backToMainMenuButton.addEventListener("click", () => {
+    root.removeChild(winModal);
+    state = {
+      page: "main",
+    };
+    goTo("main");
+  });
+  footer.appendChild(playAgainButton);
+  footer.appendChild(backToMainMenuButton);
+
+  winModalContent.appendChild(winModalHeader);
+  winModalContent.appendChild(winModalText);
+  winModalContent.appendChild(footer);
+
+  winModal.appendChild(winModalContent);
+  root.appendChild(winModal);
 }

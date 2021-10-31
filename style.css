@@ -84,6 +84,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  min-width: 210px;
 }
 
 .cell {
@@ -147,4 +148,82 @@ body {
 }
 .cell.reachable:hover {
   box-shadow: inset 0 0 16px 7px aquamarine;
+}
+
+.win-modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+.win-modal-content {
+  background-color: #2d2d2d;
+  border-radius: 10px;
+  padding: 1rem;
+  width: 30rem;
+  height: 20rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 0 32px 7px rgba(0, 0, 0, 0.2),
+    inset 0 0 32px 7px rgba(0, 0, 0, 0.2);
+}
+
+.win-modal .footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1rem;
+}
+
+button {
+  background-color: #2d2d2d;
+  color: white;
+  border: none;
+  border-radius: 2px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+button:hover {
+  background-color: #252526;
+}
+
+button:disabled {
+  background-color: #252526;
+  color: #2d2d2d;
+  cursor: not-allowed;
+}
+
+input {
+  background-color: #2d2d2d;
+  color: white;
+  border: none;
+  border-radius: 2px;
+  padding: 0.5rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+input:focus {
+  outline: none;
+}
+::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+label {
+  color: white;
+  font-weight: 500;
+  font-size: large;
 }

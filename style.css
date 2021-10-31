@@ -106,6 +106,10 @@ body {
   filter: invert(1) hue-rotate(120deg) saturate(1.5) brightness(1.5);
   cursor: pointer;
 }
+.arrow.disabled {
+  cursor: not-allowed;
+  filter: invert(1) hue-rotate(120deg) saturate(1.5) brightness(0.5);
+}
 
 .player {
   position: absolute;

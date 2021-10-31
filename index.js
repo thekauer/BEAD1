@@ -120,6 +120,7 @@ function renderGame() {
   main.appendChild(board);
   main.appendChild(rightPanel);
   root.appendChild(main);
+  window.removeEventListener("keydown", rotateListener);
   renderControls();
   renderRightPanel();
   renderBoard();
@@ -201,13 +202,14 @@ function updateRightPanel() {
   }
 }
 
+function rotateListener(e) {
+  if (e.key === "r") {
+    rotateExtra();
+  }
+}
 function renderControls() {
   const board = document.querySelector("#board");
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "r") {
-      rotateExtra();
-    }
-  });
+  window.addEventListener("keydown", rotateListener);
   const createArrow = (rotation, x, y) => {
     const arrow = document.createElement("div");
     arrow.classList.add("arrow");
@@ -221,6 +223,8 @@ function renderControls() {
     arrow.addEventListener("mouseover", () => {
       highlight(x, y);
     });
+    if (!state.arrows) state.arrows = [];
+    state.arrows.push({ arrow, x, y });
     board.appendChild(arrow);
   };
   createArrow(DOWN, 2, 0);
@@ -431,6 +435,7 @@ function initializePlayers() {
 
 function shift(x, y) {
   if (JSON.stringify(state.disabled) === JSON.stringify([x, y])) return;
+  enableArrow();
   if (state.reachable) return;
   const extra = state.board.find((cell) => cell.isExtra);
   extra.isExtra = false;
@@ -506,7 +511,21 @@ function shift(x, y) {
     });
     state.disabled = [x, 0];
   }
+  disableArrow();
   showReachable();
+}
+function disableArrow() {
+  const [x, y] = state.disabled;
+  state.arrows
+    .find((arrow) => arrow.x === x && arrow.y === y)
+    .arrow.classList.add("disabled");
+}
+function enableArrow() {
+  if (!state.disabled) return;
+  const [x, y] = state.disabled;
+  state.arrows
+    .find((arrow) => arrow.x === x && arrow.y === y)
+    .arrow.classList.remove("disabled");
 }
 
 function highlight(x, y) {
@@ -531,7 +550,7 @@ function highlight(x, y) {
 function rotateExtra() {
   const extra = state.board.find((cell) => cell.isExtra);
   if (!extra) return;
-  extra.getRotation() === 3
+  extra.getRotation() >= 3
     ? extra.setRotation(0)
     : extra.setRotation(extra.getRotation() + 1);
 }

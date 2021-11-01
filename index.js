@@ -41,6 +41,7 @@ function goTo(page) {
       renderGame();
       break;
     case "continue":
+      state = JSON.parse(localStorage.getItem("state"));
       ressurectCells();
       renderGame();
       break;
@@ -101,7 +102,6 @@ function renderMain() {
     continueGameButton.removeAttribute("disabled");
   }
   continueGameButton.addEventListener("click", () => {
-    state = JSON.parse(localStorage.getItem("state"));
     goTo("continue");
   });
 }
@@ -881,18 +881,25 @@ function saveGame() {
 }
 
 function ressurectCells() {
-  let playerNumber = 0;
+  const savedBoard = JSON.parse(localStorage.getItem("state")).board;
+
   state.page = "game";
-  state.board = state.board.map(({ type, x, y, rotation }) => {
+  state.board = savedBoard.map(({ type, x, y, rotation, number }) => {
     const elem = createElement(type, x, y, rotation);
     if (type === PLAYER) {
-      elem.number = playerNumber++;
+      elem.number = number;
       elem.ref.style.backgroundColor = PLAYER_COLORS[elem.number];
       if (elem.number === state.currentPlayer) {
         elem.ref.classList.add("active");
       }
     }
-    if (x === -1 || y === -1 || x === 9 || y === 9) {
+    if (type === TREASURE) {
+      elem.number = number;
+      if (number === state.currentPlayer) {
+        elem.ref.classList.add("show");
+      }
+    }
+    if (x === -1 || y === -1 || x === 9 || y === 9 || (x === 0 && y === 0)) {
       elem.isExtra = true;
     }
     return elem;

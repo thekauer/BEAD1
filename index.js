@@ -411,8 +411,8 @@ const createStarterBoard = () => {
     createElement(TURN, 7, 1, DOWN),
     createElement(TURN, 7, 7, LEFT),
 
-    createElement(STRAIGHT, 7, 3, UP),
-    createElement(STRAIGHT, 7, 5, UP),
+    createElement(TRIPLET, 7, 3, DOWN),
+    createElement(TRIPLET, 7, 5, DOWN),
 
     createElement(TRIPLET, 1, 3, UP),
     createElement(TRIPLET, 1, 5, UP),
@@ -897,6 +897,9 @@ function ressurectCells() {
       elem.number = number;
       if (number === state.currentPlayer) {
         elem.ref.classList.add("show");
+        elem.ref.addEventListener("click", () => {
+          step(getElement(x, y));
+        });
       }
     }
     if (x === -1 || y === -1 || x === 9 || y === 9 || (x === 0 && y === 0)) {

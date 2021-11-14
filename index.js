@@ -450,6 +450,9 @@ const fillBoard = () => {
   state.board.push(extra);
 };
 
+const isCorner = (x, y) =>
+  CORNERS.some((corner) => corner[0] === x && corner[1] === y);
+
 const placeTreasure = () => {
   for (let i = 0; i < state.playerCount; i++) {
     for (let j = 0; j < state.treasureCount; j++) {
@@ -458,10 +461,11 @@ const placeTreasure = () => {
       while (exists) {
         x = randomBetween(1, 7);
         y = randomBetween(1, 7);
-        exists = state.board.find(
-          (cell) =>
-            cell.getX() === x && cell.getY() === y && cell.type === TREASURE
-        );
+        exists =
+          state.board.find(
+            (cell) =>
+              cell.getX() === x && cell.getY() === y && cell.type === TREASURE
+          ) || isCorner(x, y);
       }
       const treasure = createElement(TREASURE, x, y, UP);
       if (i === 0) {
